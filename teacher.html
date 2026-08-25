@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة المعلم - تصحيح الاختبارات</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f4f8;
+            min-height: 100vh;
+            padding: 20px;
+            direction: rtl;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .login-container {
+            max-width: 420px;
+            margin: 50px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+        }
+        .login-container h2 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #2d3748;
+        }
+        .login-container .subtitle {
+            text-align: center;
+            color: #718096;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .form-group textarea {
+            min-height: 60px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            resize: vertical;
+        }
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-success {
+            background: #48bb78;
+        }
+        .btn-success:hover {
+            background: #38a169;
+        }
+        .btn-danger {
+            background: #fc8181;
+        }
+        .btn-danger:hover {
+            background: #f56565;
+        }
+        .btn-warning {
+            background: #ed8936;
+        }
+        .btn-warning:hover {
+            background: #dd6b20;
+        }
+        .btn-info {
+            background: #4299e1;
+        }
+        .btn-info:hover {
+            background: #3182ce;
+        }
+        .btn-secondary {
+            background: #a0aec0;
+        }
+        .btn-secondary:hover {
+            background: #718096;
+        }
+        .btn-sm {
+            padding: 5px 15px;
+            font-size: 14px;
+        }
+        .btn-xs {
+            padding: 3px 10px;
+            font-size: 12px;
+        }
+        .btn-block {
+            width: 100%;
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .alert-success {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+        .alert-error {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+        .alert-info {
+            background: #bee3f8;
+            color: #2a4365;
+        }
+        .alert-warning {
+            background: #fefcbf;
+            color: #744210;
+        }
+        .header {
+            background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .header h1 {
+            font-size: 24px;
+        }
+        .header .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .header .user-info .book-badge {
+            background: #48bb78;
+            padding: 4px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: bold;
+            color: white;
+        }
+        .logout-btn {
+            background: #fc8181;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .logout-btn:hover {
+            background: #f56565;
+            transform: scale(1.05);
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .stat-card .number {
+            font-size: 36px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .stat-card .label {
+            color: #718096;
+            font-size: 14px;
+        }
+        .stat-card.pending .number {
+            color: #ed8936;
+        }
+        .stat-card.corrected .number {
+            color: #48bb78;
+        }
+        .filter-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+        .filter-container .form-group {
+            margin-bottom: 0;
+        }
+        .filter-container .form-group label {
+            font-size: 13px;
+            color: #4a5568;
+        }
+        .result-item {
+            background: white;
+            padding: 18px 20px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            border-right: 5px solid #ed8936;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s;
+        }
+        .result-item:hover {
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .result-item.corrected {
+            border-right-color: #48bb78;
+        }
+        .result-item .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .result-item .result-header .student-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2d3748;
+        }
+        .result-item .result-header .badge {
+            padding: 3px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .result-item .result-header .badge.pending {
+            background: #fefcbf;
+            color: #744210;
+        }
+        .result-item .result-header .badge.corrected {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+        .result-item .result-details {
+            margin-top: 10px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            font-size: 14px;
+            color: #4a5568;
+        }
+        .result-item .result-actions {
+            margin-top: 12px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            overflow: auto;
+        }
+        .modal-content {
+            background: white;
+            margin: 2% auto;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 950px;
+            width: 95%;
+            max-height: 95vh;
+            overflow-y: auto;
+            animation: slideDown 0.3s ease;
+        }
+        @keyframes slideDown {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 15px;
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 10;
+        }
+        .modal-header h3 {
+            color: #2d3748;
+            font-size: 22px;
+        }
+        .close-modal {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-modal:hover {
+            color: #000;
+        }
+        .correction-question {
+            background: #f7fafc;
+            padding: 18px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            border-right: 4px solid #667eea;
+        }
+        .correction-question.correct {
+            border-right-color: #48bb78;
+        }
+        .correction-question.wrong {
+            border-right-color: #fc8181;
+        }
+        .correction-question .q-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .correction-question .q-text {
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .correction-question .q-answer {
+            margin: 8px 0;
+            padding: 10px 14px;
+            background: white;
+            border-radius: 8px;
+        }
+        .correction-question .q-answer.user {
+            background: #fff5f5;
+            border-right: 3px solid #fc8181;
+        }
+        .correction-question .q-answer.correct {
+            background: #f0fff4;
+            border-right: 3px solid #48bb78;
+        }
+        .correction-question .grade-input {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .correction-question .grade-input input {
+            width: 80px;
+            padding: 6px 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .correction-question .grade-input input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .correction-question .teacher-note {
+            margin-top: 8px;
+        }
+        .correction-question .teacher-note textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 5px;
+            resize: vertical;
+            min-height: 60px;
+            font-size: 14px;
+        }
+        .correction-question .teacher-note textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .correction-summary {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        .correction-summary .item {
+            text-align: center;
+        }
+        .correction-summary .item .value {
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .correction-summary .item .value.auto {
+            color: #667eea;
+        }
+        .correction-summary .item .value.manual {
+            color: #ed8936;
+        }
+        .correction-summary .item .value.diff {
+            color: #48bb78;
+        }
+        .correction-summary .item .label {
+            font-size: 14px;
+            color: #718096;
+        }
+        .debug-info {
+            background: #fff8e7;
+            border: 2px solid #fefcbf;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            direction: ltr;
+            text-align: left;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .debug-info .title {
+            font-weight: bold;
+            color: #744210;
+            margin-bottom: 5px;
+            text-align: right;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .mt-20 {
+            margin-top: 20px;
+        }
+        .mb-20 {
+            margin-bottom: 20px;
+        }
+        hr {
+            margin: 30px 0;
+            border: none;
+            border-top: 2px solid #e2e8f0;
+        }
+        .text-center {
+            text-align: center;
+        }
+
+        .entry-method-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .entry-method-badge.code {
+            background: #bee3f8;
+            color: #2b6cb0;
+        }
+        .entry-method-badge.link {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+        .entry-method-badge.both {
+            background: #fefcbf;
+            color: #744210;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                text-align: center;
+            }
+            .header .user-info {
+                flex-direction: column;
+                width: 100%;
+            }
+            .modal-content {
+                margin: 5% auto;
+                padding: 20px;
+            }
+            .filter-container {
+                grid-template-columns: 1fr;
+            }
+            .correction-summary {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- ===== شاشة تسجيل الدخول ===== -->
+        <div id="loginScreen" class="login-container">
+            <h2>👨‍🏫 لوحة المعلم</h2>
+            <p class="subtitle">أدخل بيانات حساب المعلم المخصص من المدير</p>
+            <div class="form-group">
+                <label>👤 اسم المستخدم</label>
+                <input type="text" id="teacherUsername" placeholder="أدخل اسم المستخدم">
+            </div>
+            <div class="form-group">
+                <label>🔑 كلمة المرور</label>
+                <input type="password" id="teacherPassword" placeholder="أدخل كلمة المرور">
+            </div>
+            <button class="btn btn-success btn-block" onclick="teacherLogin()">🔓 تسجيل الدخول</button>
+            <div id="loginMessage" style="margin-top:15px;"></div>
+        </div>
+
+        <!-- ===== لوحة المعلم ===== -->
+        <div id="teacherPanel" class="hidden">
+            <!-- HEADER -->
+            <div class="header">
+                <div>
+                    <h1>📚 لوحة تصحيح الاختبارات</h1>
+                    <div id="teacherInfo" style="font-size:14px; margin-top:5px; color: #a0aec0;"></div>
+                </div>
+                <div class="user-info">
+                    <span id="teacherNameDisplay">👤 المعلم</span>
+                    <span id="teacherBookBadge" class="book-badge">📕 الكتاب</span>
+                    <button class="logout-btn" onclick="logoutTeacher()">🚪 تسجيل الخروج</button>
+                </div>
+            </div>
+
+            <!-- الإحصائيات -->
+            <div class="stats-grid" id="statsGrid">
+                <div class="stat-card pending">
+                    <div class="number" id="pendingCount">0</div>
+                    <div class="label">⏳ في انتظار التصحيح</div>
+                </div>
+                <div class="stat-card corrected">
+                    <div class="number" id="correctedCount">0</div>
+                    <div class="label">✅ تم التصحيح</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number" id="totalCount">0</div>
+                    <div class="label">📊 إجمالي النتائج</div>
+                </div>
+            </div>
+
+            <!-- الفلاتر -->
+            <div class="filter-container">
+                <div class="form-group">
+                    <label>🔍 بحث باسم الطالب</label>
+                    <input type="text" id="filterStudent" placeholder="اسم الطالب..." onkeyup="applyFilters()">
+                </div>
+                <div class="form-group">
+                    <label>📋 الحالة</label>
+                    <select id="filterStatus" onchange="applyFilters()">
+                        <option value="all">-- الكل --</option>
+                        <option value="pending">⏳ في انتظار التصحيح</option>
+                        <option value="corrected">✅ تم التصحيح</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>📅 ترتيب حسب</label>
+                    <select id="filterSort" onchange="applyFilters()">
+                        <option value="newest">الأحدث أولاً</option>
+                        <option value="oldest">الأقدم أولاً</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- معلومات التصحيح -->
+            <div id="debugContainer" class="hidden">
+                <div class="debug-info" id="debugInfo">
+                    <div class="title">📊 معلومات التصحيح</div>
+                    <div id="debugContent">جاري التحميل...</div>
+                </div>
+            </div>
+
+            <!-- قائمة النتائج -->
+            <div id="resultsList"></div>
+        </div>
+    </div>
+
+    <!-- ===== نافذة التصحيح ===== -->
+    <div id="correctionModal" class="modal">
+        <div class="modal-content" style="max-width: 950px;">
+            <div class="modal-header">
+                <h3>✏️ تصحيح إجابات الطالب</h3>
+                <span class="close-modal" onclick="closeCorrectionModal()">&times;</span>
+            </div>
+            <div id="correctionContent">
+                <!-- معلومات الطالب -->
+                <div id="studentInfo" style="background:#f7fafc;padding:15px;border-radius:8px;margin-bottom:20px;">
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;">
+                        <div><strong>👤 الطالب:</strong> <span id="corrStudentName">-</span></div>
+                        <div><strong>📧 البريد:</strong> <span id="corrStudentEmail">-</span></div>
+                        <div><strong>📚 الموضوع:</strong> <span id="corrSubject">-</span></div>
+                        <div><strong>📕 الكتاب:</strong> <span id="corrBook">-</span></div>
+                        <div><strong>🔑 كود:</strong> <span id="corrExamCode">-</span></div>
+                        <div><strong>📅 التاريخ:</strong> <span id="corrDate">-</span></div>
+                        <div><strong>⏱️ الوقت:</strong> <span id="corrDuration">-</span></div>
+                        <div><strong>🔗 طريقة الدخول:</strong> <span id="corrEntryMethod">-</span></div>
+                    </div>
+                </div>
+
+                <!-- الأسئلة -->
+                <div id="correctionQuestions"></div>
+
+                <!-- الملخص -->
+                <div class="correction-summary">
+                    <div class="item">
+                        <div class="value auto" id="autoTotal">0</div>
+                        <div class="label">📊 المجموع التلقائي</div>
+                    </div>
+                    <div class="item">
+                        <div class="value manual" id="manualTotal">0</div>
+                        <div class="label">✏️ المجموع اليدوي</div>
+                    </div>
+                    <div class="item">
+                        <div class="value diff" id="diffTotal">0</div>
+                        <div class="label">📈 الفرق</div>
+                    </div>
+                </div>
+
+                <!-- أزرار الإجراء -->
+                <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;">
+                    <button class="btn btn-success" onclick="saveCorrection()">💾 حفظ التصحيح</button>
+                    <button class="btn btn-warning" onclick="resetCorrection()">🔄 إعادة ضبط</button>
+                    <button class="btn btn-danger" onclick="closeCorrectionModal()">❌ إلغاء</button>
+                </div>
+                <div id="correctionResult" style="margin-top:15px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // FIREBASE CONFIG
+        // ============================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyCGrH8S5PnBAZx2hGxdssH_1ZXjuQxM4kU",
+            authDomain: "bakaloria-1a122.firebaseapp.com",
+            projectId: "bakaloria-1a122",
+            storageBucket: "bakaloria-1a122.firebasestorage.app",
+            messagingSenderId: "911200550494",
+            appId: "1:911200550494:web:876c1fb9887d0fd00d7ecf"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // ============================================================
+        // المتغيرات العامة
+        // ============================================================
+        let currentTeacher = '';
+        let currentTeacherBook = '';
+        let allResults = [];
+        let currentCorrectionResult = null;
+        let correctionQuestionsData = [];
+
+        // ============================================================
+        // تسجيل دخول المعلم
+        // ============================================================
+        function teacherLogin() {
+            const username = document.getElementById('teacherUsername').value.trim();
+            const password = document.getElementById('teacherPassword').value.trim();
+
+            if (!username || !password) {
+                showMessage('loginMessage', '❌ الرجاء إدخال اسم المستخدم وكلمة المرور', 'error');
+                return;
+            }
+
+            showMessage('loginMessage', '⏳ جاري التحقق من البيانات...', 'info');
+
+            db.collection('teachers')
+                .where('username', '==', username)
+                .where('password', '==', password)
+                .get()
+                .then(snapshot => {
+                    if (snapshot.empty) {
+                        showMessage('loginMessage', '❌ اسم المستخدم أو كلمة المرور غير صحيحة', 'error');
+                        return;
+                    }
+
+                    const doc = snapshot.docs[0];
+                    const teacherData = doc.data();
+                    currentTeacher = username;
+                    currentTeacherBook = teacherData.book || '';
+
+                    if (!currentTeacherBook) {
+                        showMessage('loginMessage', '❌ لم يتم تخصيص كتاب لهذا المعلم. الرجاء التواصل مع المدير.', 'error');
+                        return;
+                    }
+
+                    document.getElementById('loginScreen').classList.add('hidden');
+                    document.getElementById('teacherPanel').classList.remove('hidden');
+
+                    document.getElementById('teacherNameDisplay').textContent = '👤 ' + username;
+                    document.getElementById('teacherBookBadge').textContent = '📕 ' + currentTeacherBook;
+                    document.getElementById('teacherInfo').textContent = '📕 الكتاب المخصص: ' + currentTeacherBook;
+
+                    document.getElementById('loginMessage').innerHTML = '';
+
+                    loadResults();
+                    logActivity('login', 'تسجيل دخول المعلم: ' + username);
+                })
+                .catch(error => {
+                    showMessage('loginMessage', '❌ خطأ في الاتصال: ' + error.message, 'error');
+                });
+        }
+
+        function logoutTeacher() {
+            currentTeacher = '';
+            currentTeacherBook = '';
+            allResults = [];
+            document.getElementById('teacherPanel').classList.add('hidden');
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('teacherUsername').value = '';
+            document.getElementById('teacherPassword').value = '';
+            document.getElementById('loginMessage').innerHTML = '';
+        }
+
+        // ============================================================
+        // تحميل النتائج
+        // ============================================================
+        function loadResults() {
+            if (!currentTeacherBook) {
+                showMessage('resultsList', '❌ لا يوجد كتاب مخصص', 'error');
+                return;
+            }
+
+            showMessage('resultsList', '⏳ جاري تحميل النتائج للكتاب: ' + currentTeacherBook + '...', 'info');
+
+            db.collection('results')
+                .where('book', '==', currentTeacherBook)
+                .where('requiresManualCorrection', '==', true)
+                .orderBy('submittedAt', 'desc')
+                .get()
+                .then(snapshot => {
+                    allResults = [];
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        allResults.push({
+                            id: doc.id,
+                            ...data
+                        });
+                    });
+
+                    showDebugInfo();
+                    updateStats();
+                    applyFilters();
+
+                    if (allResults.length === 0) {
+                        showMessage('resultsList', '📭 لا توجد نتائج بحاجة للتصحيح في الكتاب "' + currentTeacherBook + '"', 'info');
+                    } else {
+                        showMessage('resultsList', '✅ تم تحميل ' + allResults.length + ' نتيجة', 'success');
+                    }
+
+                    logActivity('load_results', 'تحميل ' + allResults.length + ' نتيجة');
+                })
+                .catch(error => {
+                    console.error('خطأ في تحميل النتائج:', error);
+                    showMessage('resultsList', '❌ خطأ في تحميل النتائج: ' + error.message, 'error');
+                });
+        }
+
+        // ============================================================
+        // عرض معلومات التصحيح
+        // ============================================================
+        function showDebugInfo() {
+            const container = document.getElementById('debugContainer');
+            const content = document.getElementById('debugContent');
+
+            if (allResults.length === 0) {
+                container.classList.remove('hidden');
+                content.textContent = '📭 لا توجد نتائج في الكتاب "' + currentTeacherBook + '"';
+                return;
+            }
+
+            let debugText = '📊 إجمالي النتائج: ' + allResults.length + '\n';
+            debugText += '📕 الكتاب: ' + currentTeacherBook + '\n';
+            debugText += '📅 آخر تحديث: ' + new Date().toLocaleString('ar-SA') + '\n\n';
+
+            const pending = allResults.filter(r => !r.isManuallyCorrected);
+            const corrected = allResults.filter(r => r.isManuallyCorrected);
+
+            debugText += '⏳ في انتظار التصحيح: ' + pending.length + '\n';
+            debugText += '✅ تم التصحيح: ' + corrected.length + '\n\n';
+
+            debugText += '--- تفاصيل النتائج ---\n';
+            allResults.forEach((r, i) => {
+                const method = r.entryMethod || 'code_only';
+                const methodText = method === 'code_only' ? 'كود' : method === 'link_only' ? 'رابط' : 'كود+رابط';
+                debugText += (i + 1) + '. ' + r.studentName + ' | ' +
+                    (r.isManuallyCorrected ? '✅ مصحح' : '⏳ غير مصحح') +
+                    ' | ' + (r.score || '?') + '/' + r.totalScore +
+                    ' | 🔗 ' + methodText +
+                    (r.enteredViaLink ? ' (رابط)' : ' (كود)') + '\n';
+            });
+
+            content.textContent = debugText;
+            container.classList.remove('hidden');
+        }
+
+        // ============================================================
+        // تحديث الإحصائيات
+        // ============================================================
+        function updateStats() {
+            const total = allResults.length;
+            const pending = allResults.filter(r => !r.isManuallyCorrected).length;
+            const corrected = allResults.filter(r => r.isManuallyCorrected).length;
+
+            document.getElementById('totalCount').textContent = total;
+            document.getElementById('pendingCount').textContent = pending;
+            document.getElementById('correctedCount').textContent = corrected;
+        }
+
+        // ============================================================
+        // تطبيق الفلاتر
+        // ============================================================
+        function applyFilters() {
+            const search = document.getElementById('filterStudent').value.toLowerCase().trim();
+            const status = document.getElementById('filterStatus').value;
+            const sort = document.getElementById('filterSort').value;
+
+            let filtered = [...allResults];
+
+            if (search) {
+                filtered = filtered.filter(r => r.studentName.toLowerCase().includes(search));
+            }
+
+            if (status === 'pending') {
+                filtered = filtered.filter(r => !r.isManuallyCorrected);
+            } else if (status === 'corrected') {
+                filtered = filtered.filter(r => r.isManuallyCorrected);
+            }
+
+            if (sort === 'newest') {
+                filtered.sort((a, b) => {
+                    const dateA = a.submittedAt?.seconds || 0;
+                    const dateB = b.submittedAt?.seconds || 0;
+                    return dateB - dateA;
+                });
+            } else {
+                filtered.sort((a, b) => {
+                    const dateA = a.submittedAt?.seconds || 0;
+                    const dateB = b.submittedAt?.seconds || 0;
+                    return dateA - dateB;
+                });
+            }
+
+            displayResults(filtered);
+        }
+
+        // ============================================================
+        // عرض النتائج
+        // ============================================================
+        function displayResults(results) {
+            const container = document.getElementById('resultsList');
+
+            if (results.length === 0) {
+                container.innerHTML =
+                    '<div style="text-align:center;padding:40px;color:#718096;">' +
+                    '<p style="font-size:48px;">📭</p>' +
+                    '<p>لا توجد نتائج في انتظار التصحيح</p>' +
+                    '<p style="font-size:14px;margin-top:10px;">💡 جميع النتائج مصححة أو لا توجد نتائج جديدة</p>' +
+                    '<button class="btn btn-info btn-sm" onclick="loadResults()" style="margin-top:15px;">🔄 تحديث</button>' +
+                    '</div>';
+                return;
+            }
+
+            const methodNames = {
+                'code_only': '🔑 كود',
+                'link_only': '🔗 رابط',
+                'both': '🔑🔗 كود+رابط'
+            };
+            const methodClasses = {
+                'code_only': 'code',
+                'link_only': 'link',
+                'both': 'both'
+            };
+
+            let html = '';
+            results.forEach((result) => {
+                const isCorrected = result.isManuallyCorrected || false;
+                const statusClass = isCorrected ? 'corrected' : 'pending';
+                const statusText = isCorrected ? '✅ تم التصحيح' : '⏳ في انتظار التصحيح';
+                const date = result.submittedAt ? new Date(result.submittedAt.seconds * 1000).toLocaleString('ar-SA') : 'غير معروف';
+                const scoreDisplay = isCorrected && result.manualCorrection ?
+                    result.manualCorrection.totalManualScore + '/' + result.totalScore :
+                    '?/' + result.totalScore;
+                const entryMethod = result.entryMethod || 'code_only';
+
+                html += '<div class="result-item ' + statusClass + '">' +
+                    '<div class="result-header">' +
+                    '<span class="student-name">👤 ' + result.studentName + '</span>' +
+                    '<span>' +
+                    '<span class="entry-method-badge ' + methodClasses[entryMethod] + '">' + (methodNames[entryMethod] || 'كود') + '</span>' +
+                    '<span class="badge ' + statusClass + '" style="margin-right:8px;">' + statusText + '</span>' +
+                    '</span></div>' +
+                    '<div class="result-details">' +
+                    '<span>📧 ' + (result.studentEmail || 'غير متوفر') + '</span>' +
+                    '<span>🔑 ' + result.examCode + '</span>' +
+                    '<span>📕 ' + result.book + '</span>' +
+                    '<span>📅 ' + date + '</span>' +
+                    '<span>📊 ' + scoreDisplay + '</span>' +
+                    (result.enteredViaLink ? '<span>🔗 عبر الرابط</span>' : '<span>🔑 عبر الكود</span>') +
+                    '</div>' +
+                    '<div class="result-actions">' +
+                    '<button class="btn btn-warning btn-sm" onclick="openCorrectionModal(\'' + result.id + '\')">✏️ تصحيح</button>' +
+                    (isCorrected ? '<button class="btn btn-info btn-sm" onclick="viewCorrectedResult(\'' + result.id + '\')">📋 عرض</button>' : '') +
+                    '</div>' +
+                    '</div>';
+            });
+
+            container.innerHTML = html;
+        }
+
+        // ============================================================
+        // فتح نافذة التصحيح
+        // ============================================================
+        function openCorrectionModal(resultId) {
+            const result = allResults.find(r => r.id === resultId);
+            if (!result) {
+                showMessage('resultsList', '❌ لم يتم العثور على النتيجة', 'error');
+                return;
+            }
+
+            currentCorrectionResult = result;
+            document.getElementById('correctionModal').style.display = 'block';
+            document.getElementById('correctionResult').innerHTML = '';
+
+            const methodNames = {
+                'code_only': '🔑 كود فقط',
+                'link_only': '🔗 رابط فقط',
+                'both': '🔑 كود + 🔗 رابط'
+            };
+
+            document.getElementById('corrStudentName').textContent = result.studentName || '-';
+            document.getElementById('corrStudentEmail').textContent = result.studentEmail || '-';
+            document.getElementById('corrSubject').textContent = result.subject || '-';
+            document.getElementById('corrBook').textContent = result.book || '-';
+            document.getElementById('corrExamCode').textContent = result.examCode || '-';
+            document.getElementById('corrDate').textContent = result.submittedAt ?
+                new Date(result.submittedAt.seconds * 1000).toLocaleString('ar-SA') : '-';
+            document.getElementById('corrDuration').textContent = result.duration ?
+                Math.floor(result.duration / 60) + ' دقيقة' : '-';
+            document.getElementById('corrEntryMethod').textContent = methodNames[result.entryMethod] || 'كود';
+
+            correctionQuestionsData = [];
+            const allQuestions = [];
+
+            if (result.wrongQuestions) {
+                result.wrongQuestions.forEach(q => allQuestions.push({ ...q, isCorrect: false }));
+            }
+            if (result.correctQuestions) {
+                result.correctQuestions.forEach(q => allQuestions.push({ ...q, isCorrect: true }));
+            }
+
+            const manualCorrection = result.manualCorrection || null;
+            renderCorrectionQuestions(allQuestions, result, manualCorrection);
+            updateCorrectionTotals();
+        }
+
+        // ============================================================
+        // عرض الأسئلة في نافذة التصحيح
+        // ============================================================
+        function renderCorrectionQuestions(questions, result, manualCorrection) {
+            const container = document.getElementById('correctionQuestions');
+
+            if (!questions || questions.length === 0) {
+                container.innerHTML = '<p style="color:#718096;">لا توجد أسئلة للتصحيح</p>';
+                return;
+            }
+
+            const maxGradePerQuestion = Math.ceil(result.totalScore / questions.length);
+            let html = '';
+
+            questions.forEach((q, index) => {
+                const existingCorrection = manualCorrection?.questions?.find(mq => mq.questionId === index);
+                const grade = existingCorrection ? existingCorrection.manualGrade : (q.isCorrect ? maxGradePerQuestion : 0);
+                const note = existingCorrection?.teacherNote || '';
+
+                correctionQuestionsData.push({
+                    questionId: index,
+                    questionText: q.question,
+                    userAnswer: q.userAnswerText || 'لم يجب',
+                    correctAnswer: q.correctAnswerText || 'غير محدد',
+                    isCorrect: q.isCorrect || false,
+                    maxGrade: maxGradePerQuestion,
+                    manualGrade: grade,
+                    teacherNote: note,
+                    autoGrade: q.isCorrect ? maxGradePerQuestion : 0
+                });
+
+                const isCorrect = q.isCorrect || false;
+                const statusClass = isCorrect ? 'correct' : 'wrong';
+                const statusText = isCorrect ? '✅ صحيح تلقائياً' : '❌ خاطئ تلقائياً';
+
+                html += '<div class="correction-question ' + statusClass + '">' +
+                    '<div class="q-header">' +
+                    '<div class="q-text">' + (index + 1) + '. ' + q.question + '</div>' +
+                    '<span class="badge ' + (isCorrect ? 'badge-success' : 'badge-danger') + '">' + statusText +
+                    '</span></div>' +
+                    '<div class="q-answer user"><strong>❌ إجابة الطالب:</strong> ' + (q.userAnswerText || 'لم يجب') + '</div>' +
+                    (!isCorrect ? '<div class="q-answer correct"><strong>✅ الإجابة الصحيحة:</strong> ' + (q.correctAnswerText || 'غير محدد') + '</div>' : '') +
+                    '<div class="grade-input">' +
+                    '<label>✏️ الدرجة (0-' + maxGradePerQuestion + '):</label>' +
+                    '<input type="number" id="grade_' + index + '" value="' + grade + '" min="0" max="' + maxGradePerQuestion + '" onchange="updateCorrectionTotals()">' +
+                    '<span>/ ' + maxGradePerQuestion + '</span></div>' +
+                    '<div class="teacher-note">' +
+                    '<label>📝 ملاحظة للمعلم:</label>' +
+                    '<textarea id="note_' + index + '" placeholder="أضف ملاحظة للطالب..." onchange="updateCorrectionTotals()">' + note + '</textarea></div></div>';
+            });
+
+            container.innerHTML = html;
+        }
+
+        // ============================================================
+        // تحديث المجاميع
+        // ============================================================
+        function updateCorrectionTotals() {
+            let autoTotal = 0;
+            let manualTotal = 0;
+
+            correctionQuestionsData.forEach((q, index) => {
+                autoTotal += q.autoGrade || 0;
+                const gradeInput = document.getElementById('grade_' + index);
+                if (gradeInput) {
+                    const val = parseFloat(gradeInput.value);
+                    if (!isNaN(val) && val >= 0 && val <= q.maxGrade) {
+                        q.manualGrade = val;
+                        q.teacherNote = document.getElementById('note_' + index)?.value || '';
+                    }
+                }
+                manualTotal += q.manualGrade || 0;
+            });
+
+            document.getElementById('autoTotal').textContent = autoTotal;
+            document.getElementById('manualTotal').textContent = manualTotal;
+            const diff = manualTotal - autoTotal;
+            document.getElementById('diffTotal').textContent = diff;
+            document.getElementById('diffTotal').style.color = diff > 0 ? '#48bb78' : diff < 0 ? '#fc8181' : '#718096';
+        }
+
+        // ============================================================
+        // إعادة ضبط التصحيح
+        // ============================================================
+        function resetCorrection() {
+            if (!currentCorrectionResult) return;
+            if (!confirm('⚠️ إعادة ضبط جميع الدرجات والملاحظات؟')) return;
+
+            correctionQuestionsData.forEach((q, index) => {
+                const gradeInput = document.getElementById('grade_' + index);
+                if (gradeInput) {
+                    const defaultGrade = q.isCorrect ? q.maxGrade : 0;
+                    gradeInput.value = defaultGrade;
+                    q.manualGrade = defaultGrade;
+                }
+                const noteInput = document.getElementById('note_' + index);
+                if (noteInput) {
+                    noteInput.value = '';
+                    q.teacherNote = '';
+                }
+            });
+
+            updateCorrectionTotals();
+            showMessage('correctionResult', '🔄 تم إعادة الضبط', 'info');
+        }
+
+        // ============================================================
+        // حفظ التصحيح
+        // ============================================================
+        function saveCorrection() {
+            if (!currentCorrectionResult) {
+                showMessage('correctionResult', '❌ لا توجد نتيجة للتصحيح', 'error');
+                return;
+            }
+
+            let totalManualScore = 0;
+            const correctedQuestions = [];
+
+            correctionQuestionsData.forEach((q, index) => {
+                const gradeInput = document.getElementById('grade_' + index);
+                const noteInput = document.getElementById('note_' + index);
+
+                let grade = q.manualGrade || 0;
+                if (gradeInput) {
+                    const val = parseFloat(gradeInput.value);
+                    if (!isNaN(val) && val >= 0 && val <= q.maxGrade) {
+                        grade = val;
+                    }
+                }
+
+                const note = noteInput ? noteInput.value : '';
+
+                correctedQuestions.push({
+                    questionId: q.questionId,
+                    questionText: q.questionText,
+                    userAnswer: q.userAnswer,
+                    correctAnswer: q.correctAnswer,
+                    isCorrect: q.isCorrect,
+                    maxGrade: q.maxGrade,
+                    manualGrade: grade,
+                    teacherNote: note,
+                    autoGrade: q.autoGrade
+                });
+
+                totalManualScore += grade;
+            });
+
+            const correctCount = correctedQuestions.filter(q => q.manualGrade > 0).length;
+
+            const updateData = {
+                isManuallyCorrected: true,
+                correct: correctCount,
+                score: totalManualScore,
+                manualCorrection: {
+                    correctedBy: currentTeacher,
+                    correctedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    questions: correctedQuestions,
+                    totalManualScore: totalManualScore,
+                    totalMaxScore: currentCorrectionResult.totalScore
+                },
+                percentage: Math.round((totalManualScore / currentCorrectionResult.totalScore) * 100)
+            };
+
+            db.collection('results').doc(currentCorrectionResult.id).update(updateData)
+                .then(() => {
+                    logActivity('manual_correction', 'تصحيح يدوي لنتيجة ' + currentCorrectionResult.studentName);
+                    showMessage('correctionResult', '✅ تم حفظ التصحيح! الدرجة النهائية: ' + totalManualScore +
+                        '/' + currentCorrectionResult.totalScore, 'success');
+
+                    setTimeout(() => {
+                        closeCorrectionModal();
+                        loadResults();
+                    }, 1500);
+                })
+                .catch(error => {
+                    showMessage('correctionResult', '❌ خطأ في حفظ التصحيح: ' + error.message, 'error');
+                });
+        }
+
+        // ============================================================
+        // إغلاق نافذة التصحيح
+        // ============================================================
+        function closeCorrectionModal() {
+            document.getElementById('correctionModal').style.display = 'none';
+            currentCorrectionResult = null;
+            correctionQuestionsData = [];
+            document.getElementById('correctionResult').innerHTML = '';
+        }
+
+        // ============================================================
+        // عرض نتيجة مصححة
+        // ============================================================
+        function viewCorrectedResult(resultId) {
+            const result = allResults.find(r => r.id === resultId);
+            if (!result) return;
+
+            document.getElementById('correctionModal').style.display = 'block';
+            document.getElementById('correctionResult').innerHTML = '';
+
+            const methodNames = {
+                'code_only': '🔑 كود فقط',
+                'link_only': '🔗 رابط فقط',
+                'both': '🔑 كود + 🔗 رابط'
+            };
+
+            document.getElementById('corrStudentName').textContent = result.studentName || '-';
+            document.getElementById('corrStudentEmail').textContent = result.studentEmail || '-';
+            document.getElementById('corrSubject').textContent = result.subject || '-';
+            document.getElementById('corrBook').textContent = result.book || '-';
+            document.getElementById('corrExamCode').textContent = result.examCode || '-';
+            document.getElementById('corrDate').textContent = result.submittedAt ?
+                new Date(result.submittedAt.seconds * 1000).toLocaleString('ar-SA') : '-';
+            document.getElementById('corrDuration').textContent = result.duration ?
+                Math.floor(result.duration / 60) + ' دقيقة' : '-';
+            document.getElementById('corrEntryMethod').textContent = methodNames[result.entryMethod] || 'كود';
+
+            const manualCorrection = result.manualCorrection || {};
+            const questions = manualCorrection.questions || [];
+            const totalScore = manualCorrection.totalManualScore || result.score || 0;
+
+            let html = '<div style="background:#f0fff4;padding:15px;border-radius:8px;margin-bottom:20px;border-right:4px solid #48bb78;">';
+            html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;">';
+            html += '<div><strong>📊 الدرجة النهائية:</strong> <span style="color:#48bb78;font-size:24px;font-weight:bold;">' + totalScore + '/' + result.totalScore + '</span></div>';
+            html += '<div><strong>📈 النسبة:</strong> <span style="color:#48bb78;font-size:24px;font-weight:bold;">' + (result.percentage || 0) + '%</span></div>';
+            html += '<div><strong>✏️ صحح بواسطة:</strong> ' + (manualCorrection.correctedBy || 'معلم') + '</div>';
+            if (result.enteredViaLink) {
+                html += '<div><strong>🔗 طريقة الدخول:</strong> عبر الرابط المباشر</div>';
+            }
+            html += '</div></div>';
+
+            if (questions.length > 0) {
+                html += '<h4 style="margin-top:15px;">📝 تفاصيل الأسئلة المصححة</h4>';
+                questions.forEach((q, i) => {
+                    const isCorrect = q.manualGrade > 0;
+                    html += '<div class="correction-question ' + (isCorrect ? 'correct' : 'wrong') + '">' +
+                        '<div class="q-header">' +
+                        '<div class="q-text">' + (i + 1) + '. ' + q.questionText + '</div>' +
+                        '<span class="badge ' + (isCorrect ? 'badge-success' : 'badge-danger') + '">' +
+                        (isCorrect ? '✅ صحيح' : '❌ خاطئ') +
+                        '</span></div>' +
+                        '<div class="q-answer user"><strong>❌ إجابة الطالب:</strong> ' + (q.userAnswer || 'لم يجب') + '</div>' +
+                        (!isCorrect ? '<div class="q-answer correct"><strong>✅ الإجابة الصحيحة:</strong> ' + q.correctAnswer + '</div>' : '') +
+                        '<div class="grade-input"><strong>✏️ الدرجة:</strong> ' + q.manualGrade + '/' + q.maxGrade + '</div>' +
+                        (q.teacherNote ? '<div class="teacher-note"><strong>📝 ملاحظة:</strong> ' + q.teacherNote + '</div>' : '') +
+                        '</div>';
+                });
+            }
+
+            document.getElementById('correctionQuestions').innerHTML = html;
+
+            const summary = document.querySelector('.correction-summary');
+            if (summary) summary.style.display = 'none';
+
+            const actions = document.querySelector('.modal-content .flex-between');
+            if (actions) {
+                actions.innerHTML = '<span></span><button class="btn btn-secondary" onclick="closeCorrectionModal()">🏠 إغلاق</button>';
+            }
+        }
+
+        // ============================================================
+        // تسجيل النشاط
+        // ============================================================
+        function logActivity(action, details) {
+            if (!currentTeacher) return;
+            db.collection('teacher_logs').add({
+                teacherName: currentTeacher,
+                book: currentTeacherBook,
+                action: action,
+                details: details || '',
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }).catch(err => console.warn('فشل تسجيل النشاط:', err));
+        }
+
+        // ============================================================
+        // دوال مساعدة
+        // ============================================================
+        function showMessage(elementId, message, type) {
+            const el = document.getElementById(elementId);
+            if (el) el.innerHTML = '<div class="alert alert-' + type + '">' + message + '</div>';
+        }
+
+        // ============================================================
+        // إغلاق النافذة عند النقر خارجها
+        // ============================================================
+        window.onclick = function(event) {
+            const modal = document.getElementById('correctionModal');
+            if (event.target === modal) {
+                closeCorrectionModal();
+            }
+        };
+
+        // ============================================================
+        // اختصارات لوحة المفاتيح
+        // ============================================================
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                if (document.getElementById('correctionModal').style.display === 'block') {
+                    closeCorrectionModal();
+                }
+            }
+            if (e.key === 'Enter' && document.getElementById('loginScreen').classList.contains('hidden') === false) {
+                teacherLogin();
+            }
+        });
+
+        // ============================================================
+        // تهيئة
+        // ============================================================
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('teacherPassword').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') teacherLogin();
+            });
+            document.getElementById('teacherUsername').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') teacherLogin();
+            });
+        });
+
+        // ============================================================
+        // تصدير الدوال
+        // ============================================================
+        window.teacherLogin = teacherLogin;
+        window.logoutTeacher = logoutTeacher;
+        window.loadResults = loadResults;
+        window.applyFilters = applyFilters;
+        window.openCorrectionModal = openCorrectionModal;
+        window.closeCorrectionModal = closeCorrectionModal;
+        window.saveCorrection = saveCorrection;
+        window.resetCorrection = resetCorrection;
+        window.updateCorrectionTotals = updateCorrectionTotals;
+        window.viewCorrectedResult = viewCorrectedResult;
+    </script>
+</body>
+</html>

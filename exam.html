@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>جاري التوجيه إلى الاختبار...</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            direction: rtl;
+        }
+        .container {
+            background: white;
+            padding: 50px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 90%;
+        }
+        .spinner {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 20px;
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        h2 {
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+        p {
+            color: #718096;
+            margin-bottom: 20px;
+        }
+        .btn {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .btn:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .error {
+            color: #fc8181;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="spinner"></div>
+        <h2>📚 جاري التوجيه إلى الاختبار</h2>
+        <p>⏳ يرجى الانتظار...</p>
+        <div id="message"></div>
+        <a href="index.html" class="btn" style="margin-top:20px;">🏠 العودة للرئيسية</a>
+    </div>
+
+    <script>
+        (function() {
+            // الحصول على معامل الرابط من المسار
+            const urlParams = new URLSearchParams(window.location.search);
+            const link = urlParams.get('link');
+            
+            const messageEl = document.getElementById('message');
+            
+            if (link) {
+                // التحقق من صحة الرابط
+                if (link.startsWith('exam_') && link.length > 5) {
+                    // إعادة التوجيه إلى index.html مع الرابط
+                    setTimeout(function() {
+                        window.location.href = '/index.html?link=' + link;
+                    }, 1500);
+                    
+                    messageEl.innerHTML = `
+                        <p style="color:#48bb78;font-weight:bold;">✅ تم التعرف على الرابط: ${link}</p>
+                        <p style="color:#718096;font-size:14px;">🔄 جاري التوجيه...</p>
+                    `;
+                } else {
+                    messageEl.innerHTML = `
+                        <p class="error">❌ رابط غير صحيح</p>
+                        <p style="color:#718096;font-size:14px;">الرجاء التحقق من الرابط والمحاولة مرة أخرى</p>
+                    `;
+                }
+            } else {
+                messageEl.innerHTML = `
+                    <p class="error">❌ لم يتم العثور على رابط</p>
+                    <p style="color:#718096;font-size:14px;">الرجاء استخدام الرابط الصحيح للدخول إلى الاختبار</p>
+                `;
+            }
+        })();
+    </script>
+</body>
+</html>
